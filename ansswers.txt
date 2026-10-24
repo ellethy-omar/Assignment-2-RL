@@ -1,0 +1,145 @@
+Q1: What is the state-space size of the 5x5 Grid Maze problem?
+
+Assuming the starting state, the two dead states & the goal state can't spawn on top of each other
+it will be 25 * 24 * 23* 22 = 25 P 4 = 303600 states.
+
+Q2: How to op􀆟mize the policy itera􀆟on for the Grid Maze problem?
+There is the option to solve the evaulation as a linear system, basedo on the equation.
+𝑉=𝑅+𝛾𝑃𝑠𝑠′𝑉 (from the lecture)
+
+we can see from the code when running normally without the linear system method (vanialla DP):
+commad: python main.py --eval 1000        
+Episodes            : 1000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 3.44
+PI iterations       : mean=4.80  min=3  max=8  (distribution: {3: 54, 4: 328, 5: 416, 6: 172, 7: 28, 8: 2})
+Planning time / maze: 1.97 ms
+
+But if we use the linear system method:
+commad: python main.py --eval 1000 --exact
+Episodes            : 1000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 3.44
+PI iterations       : mean=4.80  min=3  max=8  (distribution: {3: 52, 4: 327, 5: 419, 6: 172, 7: 28, 8: 2})
+Planning time / maze: 0.86 ms
+
+The code uses vectorized NumPy and plans once per layout (cached). 
+It does not start every sweep from zero, since evaluation is warm-started from the previous V.
+Considering it's just a 5 * 5 matrix, it's feasible, 
+but if we scale the matrix, it will become computationally expensive to compute or cache it.
+
+Q3: How many itera􀆟ons did it take to converge on a stable policy for 5x5 maze?
+From multiple runs their logs provided below, the mean is ~ 4.82 steps, depending on the layout, the number of iterations.
+
+
+python main.py --eval 500 
+Episodes            : 500
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 3.45
+PI iterations       : mean=4.83  min=3  max=8  (distribution: {3: 25, 4: 173, 5: 187, 6: 95, 7: 19, 8: 1})
+Planning time / maze: 1.83 ms
+
+python main.py --eval 1000        
+Episodes            : 1000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 3.44
+PI iterations       : mean=4.80  min=3  max=8  (distribution: {3: 54, 4: 328, 5: 416, 6: 172, 7: 28, 8: 2})
+Planning time / maze: 1.97 ms
+
+python main.py --eval 2000
+Episodes            : 2000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 3.42
+PI iterations       : mean=4.81  min=3  max=8  (distribution: {3: 125, 4: 631, 5: 815, 6: 370, 7: 54, 8: 5})
+Planning time / maze: 1.92 ms
+
+python main.py --eval 4000
+Episodes            : 4000
+Reached goal        : 99.9%
+Hit bad cell        : 0.0%
+Avg steps           : 3.49
+PI iterations       : mean=4.82  min=2  max=8  (distribution: {2: 2, 3: 240, 4: 1246, 5: 1646, 6: 732, 7: 121, 8: 13})
+Planning time / maze: 1.89 ms
+
+python main.py --eval 5000
+Episodes            : 5000
+Reached goal        : 99.9%
+Hit bad cell        : 0.0%
+Avg steps           : 3.49
+PI iterations       : mean=4.81  min=2  max=8  (distribution: {2: 2, 3: 311, 4: 1556, 5: 2073, 6: 893, 7: 151, 8: 14})
+Planning time / maze: 1.87 ms
+
+Q4: Explain, with an example, how policy itera􀆟on behaves with mul􀆟ple goal cells?
+
+The policy sends each cell to its nearest goal, and the planning cost stays the same, since it's dynamic programming.
+
+Looking at the logs, below the policy converges a lot faster:
+
+python main.py --eval 1000 --goals 1
+Episodes            : 1000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 3.44
+PI iterations       : mean=4.80  min=3  max=8  (distribution: {3: 54, 4: 328, 5: 416, 6: 172, 7: 28, 8: 2})
+Planning time / maze: 2.00 ms
+
+python main.py --eval 1000 --goals 2
+Episodes            : 1000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 2.50
+PI iterations       : mean=4.17  min=2  max=7  (distribution: {2: 6, 3: 171, 4: 516, 5: 265, 6: 39, 7: 3})
+Planning time / maze: 1.67 ms
+
+python main.py --eval 1000 --goals 3
+Episodes            : 1000
+Reached goal        : 99.9%
+Hit bad cell        : 0.0%
+Avg steps           : 2.17
+PI iterations       : mean=3.76  min=2  max=6  (distribution: {2: 12, 3: 360, 4: 496, 5: 120, 6: 12})
+Planning time / maze: 1.48 ms
+
+python main.py --eval 1000 --goals 4
+Episodes            : 1000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 1.79
+PI iterations       : mean=3.47  min=2  max=7  (distribution: {2: 34, 3: 538, 4: 355, 5: 69, 6: 3, 7: 1})
+Planning time / maze: 1.22 ms
+
+python main.py --eval 1000 --goals 5
+Episodes            : 1000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 1.61
+PI iterations       : mean=3.21  min=2  max=6  (distribution: {2: 83, 3: 652, 4: 236, 5: 28, 6: 1})
+Planning time / maze: 1.24 ms
+
+
+Q5: Can policy itera􀆟on work on a 100x100 maze? Explain why?
+It takes a lot of time to compute, it has scalability issues.
+python main.py --eval 1000 --size 100
+Episodes            : 1000
+Reached goal        : 100.0%
+Hit bad cell        : 0.0%
+Avg steps           : 63.80
+PI iterations       : mean=45.62  min=32  max=62  (distribution: {32: 3, 33: 5, 34: 14, 35: 17, 36: 22, 37: 30, 38: 27, 39: 35, 40: 39, 41: 53, 42: 60, 43: 46, 44: 57, 45: 82, 46: 55, 47: 63, 48: 71, 49: 79, 50: 43, 51: 45, 52: 40, 53: 30, 54: 32, 55: 12, 56: 19, 57: 4, 58: 10, 59: 4, 60: 2, 62: 1})
+Planning time / maze: 137.75 ms
+
+
+It works only because the layout is fixed and known. 
+Planning over every possible layout would not fit in memory, 
+and the exact linear solve scales as O(n³).
+
+Q6: Can policy itera􀆟on work on a con􀆟nuous-space maze? Explain why?
+Policy Iteration is tabular, so it cannot enumerate infinitely many states. 
+You would need discretization or function approximation.
+
+Q7: Can policy itera􀆟on work with moving bad cells (like Packman moving ghosts)? Explain why?
+The state would have to include the ghosts’ positions, so the state space grows exponentially. 
+If the ghosts move randomly you also need a probabilistic transition model.
